@@ -27,6 +27,7 @@ import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.speech.tts.TextToSpeech;
 import android.util.Size;
@@ -64,7 +65,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private static final String TF_OD_API_LABELS_FILE = "labelmap.txt";
   private static final DetectorMode MODE = DetectorMode.TF_OD_API;
   // Minimum detection confidence to track a detection.
-  private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.5f;
+  private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.6f;
   private static final boolean MAINTAIN_ASPECT = false;
   private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
   private static final boolean SAVE_PREVIEW_BITMAP = false;
@@ -90,6 +91,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private BorderedText borderedText;
 
   Detector detector;
+
 
   @Override
   public void onPreviewSizeChosen(final Size size, final int rotation) {
@@ -212,28 +214,59 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 //            String myText1 = text.getText().toString();
 //            mTts.speak(myText1, TextToSpeech.QUEUE_FLUSH, null);
 
+
+
+
             final List<Detector.Recognition> mappedRecognitions =
                 new ArrayList<Detector.Recognition>();
 
             for (final Detector.Recognition result : results) {
               final RectF location = result.getLocation();
 //              int id = Integer.parseInt(result.getId());
-              if ((location != null && result.getConfidence() >= minimumConfidence) && (result.getTitle().equals("car") || result.getTitle().equals("bus") || result.getTitle().equals("person") || result.getTitle().equals("bicycle") || result.getTitle().equals("motorcycle") || result.getTitle().equals("traffic light") || result.getTitle().equals("truck") || result.getTitle().equals("stop sign"))) {
+              if ((location != null && result.getConfidence() >= minimumConfidence) && (result.getTitle().equals("car") || result.getTitle().equals("bus") || result.getTitle().equals("person") || result.getTitle().equals("bicycle") || result.getTitle().equals("motorcycle") || result.getTitle().equals("traffic light") || result.getTitle().equals("truck") || result.getTitle().equals("stop sign")))
+              {
 //                  System.out.println("ID is " + result.getTitle());
                 System.out.println("width is " + result.getLocation().width());
                 canvas.drawRect(location, paint);
                 ImageView imgView = (ImageView)findViewById(R.id.warning);
-                if(Float.compare(result.getLocation().width(), 100f) > 0) {
-                  imgView.setVisibility(View.VISIBLE);
-                }else
-                  imgView .setVisibility(View.INVISIBLE);
+                if(Float.compare(result.getLocation().width(), 110f) > 0) {
 
+                  t1 = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+                    @Override
+                    public void onInit(int status) {
+                      if (status != TextToSpeech.ERROR) {
+                        t1.setLanguage(Locale.ENGLISH);
+                      }
+
+                    }
+                  });
+
+
+                  final Handler handler = new Handler();
+                  handler.postDelayed(new Runnable() {
+
+                    public void run() {
+
+
+                      {
+                        t1.speak("Warning Be alert", TextToSpeech.QUEUE_FLUSH, null);
+                      }
+                    }
+                  }, 100);
+                  imgView.setVisibility(View.VISIBLE);
+
+                }
+                else {
+                  imgView.setVisibility(View.INVISIBLE);
+                }
                 cropToFrameTransform.mapRect(location);
 
                 result.setLocation(location);
                 mappedRecognitions.add(result);
               }
             }
+
+
 
             tracker.trackResults(mappedRecognitions, currTimestamp);
             trackingOverlay.postInvalidate();
@@ -289,4 +322,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   protected void setNumThreads(final int numThreads) {
     runInBackground(() -> detector.setNumThreads(numThreads));
   }
+
+
+
+
+
 }
+
+
